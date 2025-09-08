@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph Agentic AI - Policy Management Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 90%;
+            max-width: 900px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .services-status {
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.9rem;
+        }
+
+        .service-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+
+        .status-dot.online {
+            background: #44ff44;
+        }
+
+        .api-key-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .input-group button:hover {
+            background: #5a67d8;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.bot {
+            background: white;
+            color: #333;
+            border: 1px solid #dee2e6;
+            margin-right: auto;
+        }
+
+        .message.system {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            margin: 10px auto;
+            text-align: center;
+            max-width: 100%;
+            font-size: 14px;
+        }
+
+        .agent-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #1565c0;
+        }
+
+        .sql-query {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+        }
+
+        .sql-label {
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .input-section {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-container input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-container button {
+            padding: 15px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+        }
+
+        .input-container button:hover:not(:disabled) {
+            background: #5a67d8;
+        }
+
+        .input-container button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .examples {
+            margin-top: 15px;
+        }
+
+        .examples h4 {
+            margin-bottom: 10px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .example-btn {
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .example-btn.hybrid {
+            background: #e8f5e8;
+            border-color: #c3e6cb;
+        }
+
+        .example-btn.hybrid:hover {
+            background: #28a745;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .langgraph-badge {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                height: 95vh;
+                margin: 10px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .services-status {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 LangGraph Agentic AI</h1>
+            <p>Advanced workflow-based routing between RAG and Database services</p>
+            <div class="langgraph-badge">⚡ Powered by LangGraph</div>
+            <div class="services-status" id="servicesStatus">
+                <div class="service-indicator">
+                    <div class="status-dot" id="ragStatus"></div>
+                    <span>RAG Service</span>
+                </div>
+                <div class="service-indicator">
+                    <div class="status-dot" id="dbStatus"></div>
+                    <span>Database Service</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-key-section">
+            <div class="input-group">
+                <label for="apiKey">Gemini API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
+                <button onclick="checkConnection()">Initialize Agent</button>
+            </div>
+            <div id="connectionStatus" class="status hidden"></div>
+        </div>
+
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="message system">
+                    🤖 Welcome to the LangGraph Agentic AI! I use advanced workflow orchestration to intelligently route your questions:
+                    <br><br>
+                    📄 <strong>RAG Workflow</strong>: For detailed policy content, terms, and explanations
+                    <br>
+                    🗃️ <strong>Database Workflow</strong>: For structured queries, counts, and policy information
+                    <br>
+                    🔄 <strong>Hybrid Workflow</strong>: For complex queries needing both structured data and detailed content
+                    <br><br>
+                    <strong>⚡ Powered by LangGraph</strong> for state management and workflow orchestration!
+                    <br><br>
+                    Please enter your API key above to get started!
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div class="input-container">
+                    <input type="text" id="messageInput" placeholder="Ask me anything about your policies..." disabled>
+                    <button id="sendButton" onclick="sendMessage()" disabled>Send</button>
+                </div>
+                
+                <div class="examples">
+                    <h4>💡 Try these examples:</h4>
+                    <div class="example-buttons">
+                        <!-- Database queries -->
+                        <span class="example-btn" onclick="setMessage('How many active policies do we have?')">📊 How many active policies?</span>
+                        <span class="example-btn" onclick="setMessage('List all customers with pending policies')">📋 List pending policies</span>
+                        <span class="example-btn" onclick="setMessage('Find policies for John Smith')">🔍 Find John\'s policies</span>
+                        
+                        <!-- RAG queries -->
+                        <span class="example-btn" onclick="setMessage('What does the policy cover?')">📄 What does policy cover?</span>
+                        <span class="example-btn" onclick="setMessage('Explain the policy terms and conditions')">📖 Explain terms & conditions</span>
+                        <span class="example-btn" onclick="setMessage('What are the exclusions in the policy?')">❌ Policy exclusions</span>
+                        
+                        <!-- Hybrid queries -->
+                        <span class="example-btn hybrid" onclick="setMessage('Show me John Smith policies and explain their coverage')">🔄 John\'s policies + coverage</span>
+                        <span class="example-btn hybrid" onclick="setMessage('List all active policies and their key terms')">🔄 Active policies + terms</span>
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    🤖 LangGraph workflow is analyzing and processing your query...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isConnected = false;
+
+        async function checkServices() {
+            try {
+                const response = await fetch('/services/status');
+                const data = await response.json();
+                
+                const ragStatus = document.getElementById('ragStatus');
+                const dbStatus = document.getElementById('dbStatus');
+                
+                ragStatus.className = `status-dot ${data.rag_service.available ? 'online' : ''}`;
+                dbStatus.className = `status-dot ${data.database_service.available ? 'online' : ''}`;
+                
+                return data;
+            } catch (error) {
+                console.error('Error checking services:', error);
+                return null;
+            }
+        }
+
+        async function checkConnection() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const statusDiv = document.getElementById('connectionStatus');
+            
+            if (!apiKey) {
+                showStatus('Please enter your API key', 'error');
+                return;
+            }
+
+            showStatus('Initializing LangGraph agent and checking services...', 'success');
+            
+            try {
+                // Check agent health
+                const healthResponse = await fetch('/health');
+                const healthData = await healthResponse.json();
+                
+                if (healthData.status === 'healthy') {
+                    const servicesData = await checkServices();
+                    
+                    if (servicesData) {
+                        const ragAvailable = servicesData.rag_service.available;
+                        const dbAvailable = servicesData.database_service.available;
+                        
+                        if (ragAvailable && dbAvailable) {
+                            showStatus('✅ LangGraph agent initialized! All services are online and ready.', 'success');
+                        } else if (ragAvailable || dbAvailable) {
+                            showStatus(`⚠️ LangGraph agent initialized! Limited functionality - RAG: ${ragAvailable ? 'Online' : 'Offline'}, DB: ${dbAvailable ? 'Online' : 'Offline'}`, 'success');
+                        } else {
+                            showStatus('❌ LangGraph agent initialized but no services are available. Please start the RAG and Database services.', 'error');
+                        }
+                    } else {
+                        showStatus('✅ LangGraph agent initialized! Unable to check service status.', 'success');
+                    }
+                    
+                    enableChat();
+                } else {
+                    showStatus('❌ LangGraph agent service not available', 'error');
+                }
+            } catch (error) {
+                console.error('Connection check error:', error);
+                showStatus('❌ Connection failed: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.classList.remove('hidden');
+        }
+
+        function enableChat() {
+            isConnected = true;
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+            document.getElementById('messageInput').placeholder = 'Ask me anything about your policies...';
+        }
+
+        function addMessage(content, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (typeof content === 'object') {
+                // Handle agent response with metadata
+                messageDiv.innerHTML = content.response;
+                
+                // Add agent info
+                if (content.service_used || content.intent_analysis) {
+                    const agentDiv = document.createElement('div');
+                    agentDiv.className = 'agent-info';
+                    let agentInfo = `⚡ LangGraph Workflow: ${content.service_used || 'Unknown'}`;
+                    
+                    if (content.intent_analysis && content.intent_analysis.reasoning) {
+                        agentInfo += `<br>🎯 Reasoning: ${content.intent_analysis.reasoning}`;
+                        agentInfo += `<br>📊 Confidence: ${Math.round((content.intent_analysis.confidence || 0) * 100)}%`;
+                        agentInfo += `<br>🔄 Query Type: ${content.intent_analysis.query_type || 'unknown'}`;
+                    }
+                    
+                    agentDiv.innerHTML = agentInfo;
+                    messageDiv.appendChild(agentDiv);
+                }
+                
+                // Add SQL query if present
+                if (content.sql_query) {
+                    const sqlDiv = document.createElement('div');
+                    sqlDiv.innerHTML = `
+                        <div class="sql-label">Generated SQL Query:</div>
+                        <div class="sql-query">${content.sql_query}</div>
+                    `;
+                    messageDiv.appendChild(sqlDiv);
+                }
+            } else {
+                messageDiv.textContent = content;
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function setMessage(text) {
+            document.getElementById('messageInput').value = text;
+        }
+
+        async function sendMessage() {
+            if (!isConnected) {
+                alert('Please initialize the LangGraph agent first!');
+                return;
+            }
+
+            const messageInput = document.getElementById('messageInput');
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const message = messageInput.value.trim();
+            
+            if (!message || !apiKey) {
+                return;
+            }
+
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Show loading
+            const loading = document.getElementById('loading');
+            const sendButton = document.getElementById('sendButton');
+            loading.style.display = 'block';
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        api_key: apiKey
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Unknown error');
+                }
+
+                const data = await response.json();
+                console.log('LangGraph response:', data);
+                
+                addMessage({
+                    response: data.response || 'No response received',
+                    service_used: data.service_used,
+                    intent_analysis: data.intent_analysis,
+                    sql_query: data.sql_query
+                }, 'bot');
+
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('❌ Error: ' + error.message, 'bot');
+            } finally {
+                loading.style.display = 'none';
+                sendButton.disabled = false;
+            }
+        }
+
+        // Enter key support
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // API key enter support
+        document.getElementById('apiKey').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                checkConnection();
+            }
+        });
+
+        // Auto-focus and periodic service check
+        window.onload = function() {
+            document.getElementById('apiKey').focus();
+            checkServices(); // Initial check
+            
+            // Check services every 30 seconds
+            setInterval(checkServices, 30000);
+        };
+    </script>
+</body>
+</html>

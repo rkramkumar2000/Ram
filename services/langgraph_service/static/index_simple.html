@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph AI Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .status { margin-bottom: 20px; }
+        .chat-area { border: 1px solid #ddd; height: 400px; overflow-y: auto; padding: 15px; margin-bottom: 20px; }
+        .input-area { display: flex; gap: 10px; }
+        .input-area input { flex: 1; padding: 10px; border: 1px solid #ddd; }
+        .input-area button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .service-status { display: inline-block; margin-right: 15px; }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: red; margin-right: 5px; }
+        .dot.online { background: green; }
+        .message { margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+        .message.user { background: #e3f2fd; text-align: right; }
+        .message.bot { background: #f5f5f5; }
+        .message.system { background: #e8f5e8; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 LangGraph AI Assistant</h1>
+            <p>Smart Policy Management with Workflow Orchestration</p>
+        </div>
+
+        <div class="status">
+            <div class="service-status">
+                <span class="dot" id="ragStatus"></span>
+                RAG Service
+            </div>
+            <div class="service-status">
+                <span class="dot" id="dbStatus"></span>
+                Database Service
+            </div>
+            <div id="connectionStatus" style="display: none; margin-top: 10px;"></div>
+        </div>
+
+        <div class="chat-area" id="messages">
+            <div class="message system">
+                <strong>Welcome to LangGraph AI!</strong><br>
+                I intelligently route your questions using workflows:<br>
+                📄 Documents: Policy details, terms, coverage<br>
+                🗃️ Database: Counts, customer data, structured queries<br>
+                🔄 Hybrid: Complex questions using both sources<br>
+                <strong>Ready to help with your policy questions!</strong>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Ask about your policies..." disabled>
+            <button id="sendButton" onclick="sendMessage()" disabled>Send</button>
+        </div>
+
+        <div style="margin-top: 15px; text-align: center;">
+            <h4>Example Questions:</h4>
+            <button onclick="setMessage('How many active policies?')" style="margin: 5px;">Policy count</button>
+            <button onclick="setMessage('Find John Smith policies')" style="margin: 5px;">Customer search</button>
+            <button onclick="setMessage('Auto insurance coverage?')" style="margin: 5px;">Coverage info</button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyCce37QTXEdM6XFW4AeykgldajfL63nF9U";
+        let isConnected = false;
+
+        console.log("Script loaded successfully!");
+
+        async function checkServices() {
+            console.log("Checking services...");
+            try {
+                const response = await fetch('/services/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Service status:", data);
+                    updateServiceStatus('ragStatus', data.rag_service?.available || false);
+                    updateServiceStatus('dbStatus', data.database_service?.available || false);
+                    return data;
+                }
+            } catch (error) {
+                console.error("Error checking services:", error);
+                updateServiceStatus('ragStatus', false);
+                updateServiceStatus('dbStatus', false);
+            }
+            return null;
+        }
+
+        function updateServiceStatus(elementId, isOnline) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.toggle('online', isOnline);
+                console.log(`Status updated for ${elementId}: ${isOnline}`);
+            }
+        }
+
+        function showConnectionStatus(message, type) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.style.display = 'block';
+                statusEl.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+                statusEl.style.color = type === 'success' ? '#155724' : '#721c24';
+                statusEl.style.padding = '10px';
+                statusEl.style.borderRadius = '5px';
+            }
+        }
+
+        async function initializeAgent() {
+            console.log("Initializing agent...");
+            showConnectionStatus('🚀 Starting LangGraph AI...', 'success');
+            
+            try {
+                const healthResponse = await fetch('/health');
+                if (healthResponse.ok) {
+                    const healthData = await healthResponse.json();
+                    console.log("Health data:", healthData);
+                    
+                    if (healthData.status === 'healthy') {
+                        await checkServices();
+                        showConnectionStatus('✅ Ready! Ask me anything!', 'success');
+                        isConnected = true;
+                        document.getElementById('messageInput').disabled = false;
+                        document.getElementById('sendButton').disabled = false;
+                        console.log("Agent initialized successfully!");
+                    } else {
+                        throw new Error('Service not healthy');
+                    }
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                console.error("Error initializing:", error);
+                showConnectionStatus('❌ Connection failed. Please check services.', 'error');
+            }
+        }
+
+        function setMessage(text) {
+            document.getElementById('messageInput').value = text;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !isConnected) return;
+            
+            console.log("Sending message:", message);
+            addMessage(message, 'user');
+            input.value = '';
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message, api_key: API_KEY })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Response:", data);
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage('Sorry, there was an error processing your request.', 'bot');
+                }
+            } catch (error) {
+                console.error("Error sending message:", error);
+                addMessage('Sorry, there was an error connecting to the service.', 'bot');
+            }
+        }
+
+        function addMessage(text, type) {
+            const messages = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = text;
+            messages.appendChild(messageEl);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Handle Enter key in input
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, initializing...");
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+            initializeAgent();
+        });
+    </script>
+</body>
+</html>

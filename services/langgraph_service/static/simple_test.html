@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 LangGraph AI Assistant - Simple</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .chat-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .messages {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .user {
+            background: #667eea;
+            color: white;
+            text-align: right;
+        }
+        .bot {
+            background: #f0f0f0;
+        }
+        .examples {
+            margin-top: 20px;
+        }
+        .example-btn {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 LangGraph AI Assistant</h1>
+        <p style="text-align: center; color: #666;">
+            Powered by Groq AI • Pre-configured and Ready to Use
+        </p>
+        
+        <div class="status">
+            ✅ <strong>Ready!</strong> No API key needed - system is pre-configured with Groq AI
+        </div>
+
+        <div id="messages" class="messages">
+            <div class="message bot">
+                🚀 Welcome! I'm an intelligent workflow system that routes your questions to the best service:
+                <br><br>
+                📄 <strong>Document Search</strong>: Policy details, terms, coverage<br>
+                🗃️ <strong>Database Queries</strong>: Customer data, counts, reports<br>
+                🔄 <strong>Smart Routing</strong>: Automatically chooses the best approach
+            </div>
+        </div>
+
+        <form class="chat-form" onsubmit="sendMessage(event)">
+            <input type="text" id="messageInput" placeholder="Ask about your policies..." required>
+            <button type="submit">Send</button>
+        </form>
+
+        <div class="examples">
+            <h4>💡 Try these examples:</h4>
+            <span class="example-btn" onclick="setMessage('How many active policies?')">📊 Policy count</span>
+            <span class="example-btn" onclick="setMessage('Find John Smith policies')">🔍 Customer search</span>
+            <span class="example-btn" onclick="setMessage('What does auto insurance cover?')">📄 Coverage info</span>
+            <span class="example-btn" onclick="setMessage('Claims process steps?')">📋 Claims help</span>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "YOUR_API_KEY_HERE"; // Pre-configured Groq API
+
+        function setMessage(text) {
+            document.getElementById('messageInput').value = text;
+        }
+
+        function addMessage(content, isUser) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isUser ? 'user' : 'bot');
+            messageDiv.innerHTML = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendMessage(event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+            
+            try {
+                addMessage('🤔 Thinking...', false);
+                
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message, 
+                        api_key: API_KEY 
+                    })
+                });
+
+                // Remove the "thinking" message
+                const messages = document.getElementById('messages');
+                messages.removeChild(messages.lastChild);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                let responseText = data.response || 'No response received';
+                
+                // Clean up the response by removing debug/routing information
+                responseText = responseText
+                    .replace(/🔄 Route:.*?\n/g, '')
+                    .replace(/🎯 Logic:.*?\n/g, '')
+                    .replace(/📊 Confidence:.*?\n/g, '')
+                    .replace(/SQL:\s*SELECT.*?;\s*/g, '')
+                    .replace(/^[\s\n]+|[\s\n]+$/g, ''); // trim whitespace
+                
+                addMessage(responseText, false);
+
+            } catch (error) {
+                // Remove the "thinking" message
+                const messages = document.getElementById('messages');
+                if (messages.lastChild) {
+                    messages.removeChild(messages.lastChild);
+                }
+                addMessage('❌ Error: ' + error.message + '<br><small>Make sure all services are running</small>', false);
+            }
+        }
+    </script>
+</body>
+</html>

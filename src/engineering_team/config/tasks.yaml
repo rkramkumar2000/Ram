@@ -1,0 +1,96 @@
+design_task:
+  description: >
+    Take the high level requirements described here and prepare a detailed design for the engineer;
+    everything should be in 1 python module, but outline the classes and methods in the module.
+    Here are the requirements: {requirements}
+    IMPORTANT: Only output the design in markdown format, laying out in detail the classes and functions in the module, describing the functionality.
+  expected_output: >
+    A detailed design for the engineer, identifying the classes and functions in the module.
+  agent: engineering_lead
+  output_file: output/{module_name}_design.md
+
+code_task:
+  description: >
+    Write a python module that implements the design described by the engineering lead, in order to achieve the requirements.
+    Here are the requirements: {requirements}
+  expected_output: >
+    A python module that implements the design and achieves the requirements.
+    IMPORTANT: Output ONLY the raw Python code without any markdown formatting, code block delimiters, or backticks.
+    The output should be valid Python code that can be directly saved to a file and executed.
+    DO NOT include ```python or ``` markers at the beginning or end.
+    DO NOT include any markdown formatting.
+    Start directly with Python code (imports, functions, classes).
+  agent: backend_engineer
+  context:
+    - design_task
+  output_file: output/{module_name}
+
+frontend_task:
+  description: >
+    Create a React.js application that demonstrates the backend functionality from {module_name}.
+    Build a complete frontend with components for all major backend features including account management, portfolio tracking, and transaction history.
+    The React app should include proper API integration, state management, form handling, and error handling.
+    Create a modern, responsive user interface that allows users to interact with all backend functionality.
+    Here are the requirements: {requirements}
+  expected_output: >
+    A complete React.js application with the following structure:
+    1. package.json with all necessary dependencies
+    2. src/App.js - Main application component
+    3. src/components/ - Individual React components for different features
+    4. src/api/ - API integration layer for backend communication
+    5. public/index.html - HTML template
+    The application should be production-ready and include proper error handling, loading states, and user feedback.
+    
+    CRITICAL FORMATTING INSTRUCTIONS:
+    - DO NOT wrap the output in markdown code blocks (```json, ```javascript, etc.)
+    - DO NOT use markdown formatting
+    - Output each file with clear file path headers like "// src/App.js" or "/* package.json */"
+    - Separate each file with clear dividers
+    - Ensure all API calls use full URLs (http://localhost:5000/api/...) not relative URLs
+    - Make sure components handle plain JavaScript objects from API responses, not class instances
+    - Include proper error handling for network requests
+    - Add CORS headers consideration for cross-origin requests
+    
+    IMPORTANT: Output a structured file listing with file paths and their complete contents. Each file should be clearly separated and labeled.
+  agent: frontend_engineer
+  context:
+    - code_task
+  output_file: output/react-frontend
+
+api_task:
+  description: >
+    Create a Flask API server that bridges the React frontend with the {module_name} backend.
+    The API should expose REST endpoints that allow the React app to interact with all backend functionality.
+    Include CORS support for cross-origin requests from the React development server.
+    Here are the requirements: {requirements}
+  expected_output: >
+    A Flask API server that:
+    1. Imports and uses the {module_name} backend module
+    2. Provides REST endpoints for all backend functionality
+    3. Handles JSON requests and responses
+    4. Includes CORS support for React frontend
+    5. Includes proper error handling and HTTP status codes
+    6. Runs on port 5000 to avoid conflicts with React (port 3000)
+    
+    CRITICAL: Output ONLY the raw Python code without any markdown formatting, code block delimiters, or backticks.
+    DO NOT include ```python or ``` markers at the beginning or end.
+    Start directly with Python imports like "from flask import Flask".
+  agent: backend_engineer
+  context:
+    - code_task
+  output_file: output/flask_backend.py
+
+test_task:
+  description: >
+    Write unit tests for the given backend module {module_name} and create a test_{module_name} in the same directory as the backend module.
+  expected_output: >
+    A test_{module_name} module that tests the given backend module.
+    IMPORTANT: Output ONLY the raw Python code without any markdown formatting, code block delimiters, or backticks.
+    The output should be valid Python code that can be directly saved to a file and executed.
+    DO NOT include ```python or ``` markers at the beginning or end.
+    DO NOT include any markdown formatting.
+    Start directly with Python imports and test code.
+  agent: test_engineer
+  context:
+    - code_task
+  output_file: output/test_{module_name}

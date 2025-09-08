@@ -1,0 +1,219 @@
+```json
+/* package.json */
+{
+  "name": "trading-simulation-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for trading simulation platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1",
+    "react-scripts": "5.0.1"
+  },
+  "proxy": "http://localhost:5000"
+}
+```
+
+***
+
+```javascript
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AccountCreation from './components/AccountCreation';
+import AccountDashboard from './components/AccountDashboard';
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AccountCreation />} />
+        <Route path="/dashboard" element={<AccountDashboard />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+***
+
+```javascript
+// src/components/AccountCreation.js
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+function AccountCreation() {
+  const [initialDeposit, setInitialDeposit] = useState(0);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/api/accounts', { initial_deposit: initialDeposit });
+      localStorage.setItem('accountId', response.data.accountId);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to create account');
+    }
+  };
+
+  return (
+    <div>
+      <h1>Create Account</h1>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <label>
+          Initial Deposit:
+          <input type="number" value={initialDeposit} onChange={e => setInitialDeposit(e.target.value)} />
+        </label>
+        <button type="submit">Create Account</button>
+      </form>
+    </div>
+  );
+}
+
+export default AccountCreation;
+
+```
+
+***
+
+```javascript
+// src/components/AccountDashboard.js
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function AccountDashboard() {
+  const [account, setAccount] = useState(null);
+  const [transactionType, setTransactionType] = useState('');
+  const [amount, setAmount] = useState(0);
+  const [symbol, setSymbol] = useState('');
+  const [quantity, setQuantity] = useState(0);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchAccount = async () => {
+      try {
+        const accountId = localStorage.getItem('accountId');
+        const response = await axios.get(`http://localhost:5000/api/accounts/${accountId}`);
+        setAccount(response.data);
+      } catch (err) {
+        setError('Failed to fetch account data');
+      }
+    };
+    fetchAccount();
+  }, []);
+
+
+  const handleTransaction = async (e) => {
+    e.preventDefault();
+    try {
+      const accountId = localStorage.getItem('accountId');
+      const data = { type: transactionType, amount, symbol, quantity };
+      const response = await axios.post(`http://localhost:5000/api/accounts/${accountId}/transactions`, data);
+      setAccount(response.data);
+      setAmount(0);
+      setSymbol('');
+      setQuantity(0);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Transaction failed');
+    }
+  };
+
+  if (!account) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div>
+      <h1>Account Dashboard</h1>
+      <p>Balance: {account.balance}</p>
+      <p>Portfolio Value: {account.portfolioValue}</p>
+      <p>Profit/Loss: {account.profitLoss}</p>
+      <h2>Holdings:</h2>
+      <ul>
+        {Object.entries(account.holdings).map(([symbol, quantity]) => (
+          <li key={symbol}>{symbol}: {quantity}</li>
+        ))}
+      </ul>
+      <h2>Transactions:</h2>
+      <ul>
+        {account.transactions.map((transaction, index) => (
+          <li key={index}>{JSON.stringify(transaction)}</li>
+        ))}
+      </ul>
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={handleTransaction}>
+        <label>
+          Transaction Type:
+          <select value={transactionType} onChange={e => setTransactionType(e.target.value)}>
+            <option value="deposit">Deposit</option>
+            <option value="withdrawal">Withdrawal</option>
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+        </label>
+        {transactionType === 'deposit' || transactionType === 'withdrawal' ? (
+          <label>
+            Amount:
+            <input type="number" value={amount} onChange={e => setAmount(e.target.value)} />
+          </label>
+        ) : (
+          <>
+            <label>
+              Symbol:
+              <input type="text" value={symbol} onChange={e => setSymbol(e.target.value)} />
+            </label>
+            <label>
+              Quantity:
+              <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
+            </label>
+          </>
+        )}
+        <button type="submit">Submit Transaction</button>
+      </form>
+    </div>
+  );
+}
+
+export default AccountDashboard;
+```
+
+***
+
+```javascript
+// src/api/index.js (This file is not strictly necessary for this example but is good practice for larger applications)
+
+// This would contain functions to interact with the backend API if the API endpoints were more complex
+
+```
+
+***
+
+```html
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Trading Simulation</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+```

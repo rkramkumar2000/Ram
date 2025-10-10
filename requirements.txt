@@ -7,3 +7,5 @@ sqlparse>=0.4.4
 requests>=2.31.0
 pytest>=7.4.3
 python-dotenv>=1.0.0tenacity>=8.2.3
+click>=8.1.7
+rich>=13.6.0

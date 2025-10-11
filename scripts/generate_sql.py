@@ -1,24 +1,65 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 SQL generation script for local Excel files.
 """
 
 import os
 import sys
-from typing import List, Dict
+from typing import List, Dict, Any
 from dotenv import load_dotenv
 from rich.console import Console
 import pandas as pd
-import asyncio
 
 console = Console()
 
-async def main():
+def clean_identifier(name: str) -> str:
+    """Clean and format SQL identifier names."""
+    return name.strip().replace(" ", "_")
+
+def generate_sql_for_sheet(sheet_name: str, df: pd.DataFrame) -> str:
+    """Generate SQL CREATE TABLE statement for a sheet."""
+    sql = f"-- Table: {sheet_name}\n"
+    sql += f"CREATE TABLE IF NOT EXISTS {sheet_name} (\n"
+    
+    # Get all rows after the header row
+    data_rows = df.iloc[1:]  # Skip the header row
+    
+    # Process each column definition row
+    columns = []
+    for _, row in data_rows.iterrows():
+        col_name = clean_identifier(str(row[0]))  # First column has column name
+        data_type = str(row[1]).upper() if pd.notna(row[1]) else "VARCHAR(255)"  # Second column has type
+        constraints = []
+        
+        # Add constraints from both Constraints and Additional metadata columns
+        if pd.notna(row[2]) and str(row[2]).strip():  # Constraints column
+            constraint_str = str(row[2]).upper()
+            if "UNIQUE" in constraint_str:
+                constraints.append("UNIQUE")
+            if "NOT NULL" in constraint_str:
+                constraints.append("NOT NULL")
+                
+        if pd.notna(row[3]) and str(row[3]).strip():  # Additional metadata column
+            metadata_str = str(row[3]).upper()
+            if "PRIMARY KEY" in metadata_str:
+                constraints.append("PRIMARY KEY")
+                
+        if col_name and not col_name.isspace():
+            # Build column definition
+            col_def = [f"    {col_name}", data_type]
+            col_def.extend(constraints)
+            columns.append(" ".join(col_def))
+    
+    sql += ",\n".join(columns)
+    sql += "\n);"
+    return sql
+
+def main():
     """Main execution flow."""
     # Load environment variables
     load_dotenv()
     
-    excel_path = os.path.join(os.environ.get('EXCEL_FILE_PATH', ''), 'Sheet.xlsx')
+    excel_path = os.path.join(os.environ.get("EXCEL_FILE_PATH", ""), "Sheet.xlsx")
     
     if not os.path.exists(excel_path):
         console.print(f"[red]Error: Excel file not found at {excel_path}")
@@ -35,7 +76,7 @@ async def main():
         console.print(f"Found sheets: {sheet_names}")
         
         # Create sql_files directory
-        os.makedirs('sql_files', exist_ok=True)
+        os.makedirs("sql_files", exist_ok=True)
         
         # Process each sheet
         for sheet_name in sheet_names:
@@ -45,111 +86,23 @@ async def main():
                 # Read the first 4 rows
                 df = pd.read_excel(excel_path, sheet_name=sheet_name, nrows=4, header=None)
                 
-                # Convert to lists and clean up NaN values
-                rows = df.values.tolist()
-                rows = [[str(cell) if pd.notna(cell) else '' for cell in row] for row in rows]
+                # Generate SQL
+                sql_content = generate_sql_for_sheet(sheet_name, df)
                 
-                # Create SQL file
+                # Write SQL file
                 sql_file_path = f"sql_files/{sheet_name}.sql"
-                with open(sql_file_path, 'w') as f:
-                    f.write(f"-- Table: {sheet_name}\n")
-                    f.write("CREATE TABLE IF NOT EXISTS " + sheet_name + " (\n")
-                    
-                    # First row contains column names
-                    columns = []
-                    for i, col_name in enumerate(rows[0]):
-                        if col_name.strip():  # Skip empty columns
-                            col_def = f"    {col_name} {rows[1][i] or 'VARCHAR(255)'}"  # Use second row for types
-                            if i < len(rows[2]) and 'NOT NULL' in rows[2][i].upper():  # Check constraints
-                                col_def += " NOT NULL"
-                            columns.append(col_def)
-                    
-                    f.write(',\n'.join(columns))
-                    f.write("\n);")
+                with open(sql_file_path, "w") as f:
+                    f.write(sql_content)
                 
                 console.print(f"[green]Created SQL file: {sql_file_path}")
                 
             except Exception as e:
                 console.print(f"[red]Error processing sheet {sheet_name}: {str(e)}")
+                console.print(f"[red]Exception details: {e}")
 
     except Exception as e:
         console.print(f"[red]Error: {str(e)}")
         raise
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
-console = Console()
-
-async def main():
-    """Main execution flow."""
-    # Load environment variables
-    load_dotenv()
-    excel_path = os.path.join(os.environ.get('EXCEL_FILE_PATH', ''), 'Sheet.xlsx')
-    
-    if not os.path.exists(excel_path):
-        console.print(f"[red]Error: Excel file not found at {excel_path}")
-        return
-
-    console.print("[green]Starting SQL Schema Generation...")
-
-    try:
-        # Initialize client
-        sheets_client = LocalSheetsClient(excel_path)
-        
-        # Get schemas from sheets
-        console.print("Reading schemas from Excel sheets...")
-        for table in sheets_client.list_tables():
-            console.print(f"Processing table: {table}")
-            table_data = sheets_client.get_table_schema(table)
-            schema = parse_rows_to_schema(table, table_data['rows'])
-            console.print(f"Schema for {table}:", schema)
-
-    except Exception as e:
-        console.print(f"[red]Error: {str(e)}")
-        raise
-
-if __name__ == "__main__":
-    asyncio.run(main())
-    column_defs = []
-    for col in columns:
-        col_type = infer_sql_type(col['type'])
-        column_defs.append(f"{col['name']} {col_type}")
-    
-    sql = f"""
-    CREATE TABLE IF NOT EXISTS {table_name} (
-        {',\n        '.join(column_defs)}
-    );
-    """
-    return sqlparse.format(sql, reindent=True)
-
-def generate_insert_statements(table_name: str, data: List[Dict]) -> List[str]:
-    """Generate INSERT statements for data."""
-    if not data:
-        return []
-    
-    columns = list(data[0].keys())
-    statements = []
-    
-    for row in data:
-        values = [str(row[col]) if row[col] is not None else 'NULL' for col in columns]
-        sql = f"""
-        INSERT INTO {table_name}
-        ({', '.join(columns)})
-        VALUES
-        ({', '.join(values)});
-        """
-        statements.append(sqlparse.format(sql, reindent=True))
-    
-    return statements
-
-def infer_sql_type(value: any) -> str:
-    """Infer SQL data type from Python value."""
-    if isinstance(value, int):
-        return 'INTEGER'
-    elif isinstance(value, float):
-        return 'DECIMAL'
-    elif isinstance(value, bool):
-        return 'BOOLEAN'
-    else:
-        return 'TEXT'
+    main()

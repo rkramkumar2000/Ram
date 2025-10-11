@@ -1,0 +1,9 @@
+2025-10-11 14:13:52,647 - git_ops - DEBUG - [<module>:55] - Git operations logger initialized
+2025-10-11 14:13:52,648 - git_ops - INFO - [<module>:56] - Git operations module loaded
+2025-10-11 14:13:52,651 - git_ops - DEBUG - [__init__:83] - Initializing GitOps with repo_url=https://github.com/rkramkumar2000/Ram.git, local_path=C:/Users/rkram/Downloads/SheetToSql
+2025-10-11 14:13:52,651 - git_ops - DEBUG - [__init__:89] - Retrieving GitHub token from environment variable GITHUB_TOKEN
+2025-10-11 14:13:52,651 - git_ops - DEBUG - [__init__:96] - Initializing GitHub client
+2025-10-11 14:13:52,652 - git_ops - DEBUG - [__init__:101] - Extracting repo name from URL
+2025-10-11 14:13:52,653 - git_ops - DEBUG - [__init__:105] - Extracted repo name: rkramkumar2000/Ram
+2025-10-11 14:13:52,653 - git_ops - INFO - [__init__:109] - Attempting to access GitHub repository: rkramkumar2000/Ram
+2025-10-11 14:13:53,471 - git_ops - ERROR - [__init__:113] - Failed to access GitHub repository rkramkumar2000/Ram: 401 {"message": "Bad credentials", "documentation_url": "https://docs.github.com/rest", "status": "401"}

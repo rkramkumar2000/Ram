@@ -1,0 +1,5 @@
+-- Table: Emp
+CREATE TABLE IF NOT EXISTS emp (
+    Emp id INT UNIQUE PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL
+);

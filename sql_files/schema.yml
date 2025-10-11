@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: emp2
+    description: "DBT model generated from sheet Emp2"
+    columns:
+      - name: Emp_id
+        description: "Column Emp_id from Emp2"
+        data_type: INT
+        tests:
+          - unique
+          - unique
+          - not_null
+      - name: Name
+        description: "Column Name from Emp2"
+        data_type: VARCHAR(255)
+        tests:
+          - not_null
+      - name: Address
+        description: "Column Address from Emp2"
+        data_type: VARCHAR(255)
+        tests:
+          - not_null
